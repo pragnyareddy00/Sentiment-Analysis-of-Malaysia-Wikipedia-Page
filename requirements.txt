@@ -8,3 +8,4 @@ scikit-learn
 wordcloud
 beautifulsoup4
 imbalanced-learn
+nltk>=3.7
