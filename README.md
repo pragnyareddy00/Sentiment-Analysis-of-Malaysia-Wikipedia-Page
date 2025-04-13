@@ -101,7 +101,3 @@ This project performs **sentiment analysis** on the English Wikipedia page about
 
 ---
 
-## 🚀 How to Use
-
-### Quick Start
-```bash
