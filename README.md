@@ -97,7 +97,7 @@ This project performs **sentiment analysis** on the English Wikipedia page about
 
 ### Live Prediction Example
 <img src="/images/final_text_predict.jpg" width="450" alt="Prediction Demo">
-*The model correctly classifies "mdb2024 is a good country" as Positive*
+*The model correctly classifies an example "malaysia is a good country" as Positive*
 
 ---
 
