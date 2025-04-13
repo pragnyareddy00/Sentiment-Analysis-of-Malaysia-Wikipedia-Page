@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
-import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.corpus import stopwords
 from textblob import TextBlob
@@ -19,10 +18,9 @@ from imblearn.over_sampling import SMOTE
 import requests
 from bs4 import BeautifulSoup
 import re
-
-# Download NLTK resources
-nltk.download('punkt')
-nltk.download('stopwords')
+import nltk
+nltk.download('punkt')  
+nltk.download('stopwords') 
 
 # Set page config
 st.set_page_config(page_title="Malaysia Sentiment Analysis", layout="wide")
