@@ -1,6 +1,6 @@
 # 🌏 Sentiment Analysis of Malaysia's Wikipedia Page
 
-![Malaysia Word Cloud](/malaysia_word_cloud.png)  
+![Malaysia Word Cloud](/images/malaysia_word_cloud.png)  
 *Visualization of most frequent terms in Malaysia's Wikipedia content*
 
 ## 📌 Table of Contents
