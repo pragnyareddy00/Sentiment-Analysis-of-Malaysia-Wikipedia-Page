@@ -1,6 +1,6 @@
 # 🌏 Sentiment Analysis of Malaysia's Wikipedia Page
 
-![Malaysia Word Cloud](/images/malaysia_word_cloud.png)  
+<img src="/images/malaysia_word_cloud.png" width="600" alt="Malaysia Word Cloud">  
 *Visualization of most frequent terms in Malaysia's Wikipedia content*
 
 ## 📌 Table of Contents
@@ -33,7 +33,7 @@ This project performs **sentiment analysis** on the English Wikipedia page about
 ## 🔍 Key Findings
 
 ### 1. Sentiment Distribution
-![Sentiment Distribution](sentiment_distribution.png)
+<img src="/images/sentiment_distribution.png" width="400" alt="Sentiment Distribution">
 
 - **Neutral Dominance (70.4%)**: Wikipedia maintains an objective tone
 - **Positive vs Negative**: 21.5% positive vs 8.1% negative sentences
@@ -41,7 +41,7 @@ This project performs **sentiment analysis** on the English Wikipedia page about
 - **Example Negative**: "The country faces challenges with deforestation"
 
 ### 2. Top Topics Identified
-![Most Common Words](most_common_words.png)
+<img src="/images/most_common_words.png" width="500" alt="Most Common Words">
 
 | Category | Top Terms |
 |----------|-----------|
@@ -50,7 +50,10 @@ This project performs **sentiment analysis** on the English Wikipedia page about
 | Geography | peninsula, Sarawak, east |
 
 ### 3. Model Performance
-![Logistic Regression](logistic_regression.png) ![Naive Bayes](naive_bayes.png)
+<div style="display: flex; flex-wrap: wrap; gap: 20px; margin: 15px 0;">
+  <img src="/images/logistic_regression.png" width="350" alt="Logistic Regression">
+  <img src="/images/naive_bayes.png" width="350" alt="Naive Bayes">
+</div>
 
 | Metric | Logistic Regression | Naive Bayes |
 |--------|---------------------|-------------|
@@ -83,7 +86,7 @@ This project performs **sentiment analysis** on the English Wikipedia page about
 ## 📊 Results
 
 ### Text Statistics
-![Text Statistics](text_statistics.jpg)
+<img src="/images/text_statistics.jpg" width="450" alt="Text Statistics">
 
 | Metric | Value |
 |--------|-------|
@@ -93,7 +96,7 @@ This project performs **sentiment analysis** on the English Wikipedia page about
 | Meaningful Words | 5,188 |
 
 ### Live Prediction Example
-![Prediction Demo](final_text_predict.jpg)
+<img src="/images/final_text_predict.jpg" width="450" alt="Prediction Demo">
 *The model correctly classifies "mdb2024 is a good country" as Positive*
 
 ---
