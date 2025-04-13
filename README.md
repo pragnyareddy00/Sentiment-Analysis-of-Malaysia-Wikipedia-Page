@@ -16,7 +16,8 @@
 
 ## 🌟 Project Overview
 
-This project performs **sentiment analysis** on the English Wikipedia page about Malaysia ([en.wikipedia.org/wiki/Malaysia](https://en.wikipedia.org/wiki/Malaysia)). Using Natural Language Processing (NLP) and machine learning techniques, we:
+This project performs **sentiment analysis** on the English Wikipedia page about Malaysia ([en.wikipedia.org/wiki/Malaysia](https://en.wikipedia.org/wiki/Malaysia)). 
+Using Natural Language Processing (NLP) and machine learning techniques, we:
 
 1. Scraped and preprocessed 61,389 characters of Wikipedia text
 2. Analyzed sentiment distribution across 470 sentences
@@ -100,4 +101,7 @@ This project performs **sentiment analysis** on the English Wikipedia page about
 *The model correctly classifies an example "malaysia is a good country" as Positive*
 
 ---
+
+Developed by PRAGNYA REDDY , b.tech 3rd year student from branch 
+Computer Science ( Data Science ) at NMIMS Hyderabad
 
