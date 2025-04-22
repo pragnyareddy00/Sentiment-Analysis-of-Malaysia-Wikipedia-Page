@@ -20,14 +20,14 @@ import requests
 from bs4 import BeautifulSoup
 import re
 
-# Ensure NLTK data is downloaded properly
+# Download NLTK resources
 try:
-    # Test if punkt and stopwords are available
     nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
+try:
     nltk.data.find('corpora/stopwords')
 except LookupError:
-    # If not available, download them
-    nltk.download('punkt')
     nltk.download('stopwords')
 
 # Set page config
@@ -35,18 +35,24 @@ st.set_page_config(page_title="Malaysia Sentiment Analysis", layout="wide")
 
 def scrape_wikipedia(country):
     """Scrape text from Wikipedia page of the given country."""
-    url = f"https://en.wikipedia.org/wiki/{country}"
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    
-    # Extract all paragraphs
-    paragraphs = soup.find_all('p')
-    text = ' '.join([para.get_text() for para in paragraphs])
-    
-    return text
+    try:
+        url = f"https://en.wikipedia.org/wiki/{country}"
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Extract all paragraphs
+        paragraphs = soup.find_all('p')
+        text = ' '.join([para.get_text() for para in paragraphs])
+        
+        return text
+    except Exception as e:
+        st.error(f"Error scraping Wikipedia: {e}")
+        return ""
 
 def clean_text(text):
     """Clean and preprocess the text."""
+    if not text:
+        return ""
     # Remove square brackets and citations
     text = re.sub(r'\[[0-9]*\]', ' ', text)
     text = re.sub(r'\s+', ' ', text)
@@ -56,6 +62,8 @@ def clean_text(text):
 
 def analyze_sentiment(text):
     """Analyze sentiment using TextBlob."""
+    if not text:
+        return 'neutral'
     analysis = TextBlob(text)
     if analysis.sentiment.polarity > 0:
         return 'positive'
@@ -67,8 +75,7 @@ def analyze_sentiment(text):
 def create_wordcloud(text):
     """Generate word cloud from text."""
     if not text:
-        return plt.figure()  # Return empty figure if text is empty
-    
+        return plt.figure()
     wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.imshow(wordcloud, interpolation='bilinear')
@@ -79,7 +86,6 @@ def get_frequent_words(text, n=20):
     """Get most frequent words from text."""
     if not text:
         return []
-        
     words = word_tokenize(text.lower())
     stop_words = set(stopwords.words('english'))
     filtered_words = [word for word in words if word not in stop_words and word.isalpha()]
@@ -89,12 +95,13 @@ def get_frequent_words(text, n=20):
 
 def prepare_data(df):
     """Prepare data for machine learning."""
+    if df.empty:
+        return None, None, None, None, None
+    
     # Filter only positive and negative sentiments
     df = df[df['sentiment'].isin(['positive', 'negative'])]
     
-    # Check if we have enough data
-    if len(df) < 10 or len(df['sentiment'].unique()) < 2:
-        st.warning("Not enough data for model training. Need both positive and negative examples.")
+    if df.empty:
         return None, None, None, None, None
     
     # TF-IDF Vectorization
@@ -105,22 +112,23 @@ def prepare_data(df):
     # Split data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    # Apply SMOTE to balance classes if there are enough samples
+    # Apply SMOTE to balance classes
     try:
         smote = SMOTE(random_state=42)
         X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
-        return X_train_res, X_test, y_train_res, y_test, vectorizer
-    except ValueError as e:
-        st.warning(f"SMOTE error: {e}. Using original imbalanced data.")
-        return X_train, X_test, y_train, y_test, vectorizer
+    except Exception as e:
+        st.warning(f"SMOTE failed: {e}. Using original data.")
+        X_train_res, y_train_res = X_train, y_train
+    
+    return X_train_res, X_test, y_train_res, y_test, vectorizer
 
 def train_models(X_train, y_train):
     """Train multiple machine learning models."""
     if X_train is None or y_train is None:
         return {}
-        
+    
     models = {
-        'Logistic Regression': LogisticRegression(max_iter=1000),
+        'Logistic Regression': LogisticRegression(),
         'Decision Tree': DecisionTreeClassifier(),
         'Random Forest': RandomForestClassifier(),
         'Gradient Boosting': GradientBoostingClassifier(),
@@ -134,15 +142,12 @@ def train_models(X_train, y_train):
             model.fit(X_train, y_train)
             trained_models[name] = model
         except Exception as e:
-            st.warning(f"Error training {name}: {e}")
+            st.warning(f"Failed to train {name}: {e}")
     
     return trained_models
 
 def evaluate_models(models, X_test, y_test):
     """Evaluate models and return accuracy scores."""
-    if not models or X_test is None or y_test is None:
-        return {}
-        
     results = {}
     for name, model in models.items():
         try:
@@ -150,62 +155,57 @@ def evaluate_models(models, X_test, y_test):
             accuracy = accuracy_score(y_test, y_pred)
             results[name] = accuracy
         except Exception as e:
-            st.warning(f"Error evaluating {name}: {e}")
+            st.warning(f"Failed to evaluate {name}: {e}")
+            results[name] = 0.0
     return results
-
-def process_data():
-    """Process data and return necessary components for the app."""
-    # Scrape and process data
-    raw_text = scrape_wikipedia("Malaysia")
-    cleaned_text = clean_text(raw_text)
-    
-    # Handle potential errors with tokenization
-    try:
-        sentences = sent_tokenize(cleaned_text)
-    except LookupError:
-        # Fallback to simple splitting if NLTK fails
-        sentences = [s.strip() + '.' for s in cleaned_text.split('.') if s.strip()]
-        st.warning("NLTK sentence tokenization failed. Using basic sentence splitting.")
-    
-    # Create dataframe of sentences and sentiment
-    data = []
-    for sentence in sentences:
-        if len(sentence.split()) > 3:  # Filter very short sentences
-            sentiment = analyze_sentiment(sentence)
-            data.append({'sentence': sentence, 'sentiment': sentiment})
-    
-    df = pd.DataFrame(data)
-    
-    # Word tokenization and stopwords removal
-    try:
-        words = word_tokenize(cleaned_text.lower())
-        stop_words = set(stopwords.words('english'))
-    except LookupError:
-        # Fallback if NLTK fails
-        words = cleaned_text.lower().split()
-        stop_words = set(['the', 'and', 'is', 'of', 'to', 'in', 'a', 'for', 'with', 'as', 'by', 'on', 'at', 'that', 'this'])
-        st.warning("NLTK word tokenization or stopwords failed. Using basic tokenization.")
-    
-    filtered_words = [word for word in words if word not in stop_words and word.isalpha()]
-    filtered_text = ' '.join(filtered_words)
-    
-    # Prepare data for ML
-    X_train, X_test, y_train, y_test, vectorizer = prepare_data(df.copy())
-    models = train_models(X_train, y_train)
-    model_results = evaluate_models(models, X_test, y_test)
-    
-    return df, filtered_text, model_results, models, vectorizer, raw_text, sentences
 
 def main():
     st.title("Malaysia Wikipedia Sentiment Analysis")
     
+    # Scrape and process data
     with st.spinner("Scraping and processing Malaysia Wikipedia page..."):
-        try:
-            df, filtered_text, model_results, models, vectorizer, raw_text, sentences = process_data()
-            st.success("Data processing complete!")
-        except Exception as e:
-            st.error(f"An error occurred during data processing: {e}")
-            st.stop()
+        raw_text = scrape_wikipedia("Malaysia")
+        if not raw_text:
+            st.error("Failed to scrape Wikipedia page. Please try again later.")
+            return
+            
+        cleaned_text = clean_text(raw_text)
+        sentences = sent_tokenize(cleaned_text) if cleaned_text else []
+        
+        # Create dataframe of sentences and sentiment
+        data = []
+        for sentence in sentences:
+            if len(sentence.split()) > 3:  # Filter very short sentences
+                sentiment = analyze_sentiment(sentence)
+                data.append({'sentence': sentence, 'sentiment': sentiment})
+        
+        df = pd.DataFrame(data)
+        
+        if df.empty:
+            st.error("No valid sentences found for analysis.")
+            return
+            
+        # Word tokenization and stopwords removal
+        words = word_tokenize(cleaned_text.lower()) if cleaned_text else []
+        stop_words = set(stopwords.words('english'))
+        filtered_words = [word for word in words if word not in stop_words and word.isalpha()]
+        filtered_text = ' '.join(filtered_words)
+        
+        # Prepare data for ML
+        X_train, X_test, y_train, y_test, vectorizer = prepare_data(df.copy())
+        if X_train is None:
+            st.error("Not enough data for machine learning analysis.")
+            return
+            
+        models = train_models(X_train, y_train)
+        if not models:
+            st.error("No models were successfully trained.")
+            return
+            
+        model_results = evaluate_models(models, X_test, y_test)
+    
+    # Display results
+    st.success("Data processing complete!")
     
     # Display raw text stats
     st.subheader("Text Statistics")
@@ -226,40 +226,43 @@ def main():
     
     # Frequent words
     st.subheader("Most Frequent Words")
-    frequent_words = get_frequent_words(filtered_text)
-    freq_df = pd.DataFrame(frequent_words, columns=['Word', 'Frequency'])
-    st.dataframe(freq_df)
+    frequent_words = get_frequent_words(cleaned_text)
+    if frequent_words:
+        freq_df = pd.DataFrame(frequent_words, columns=['Word', 'Frequency'])
+        st.dataframe(freq_df)
+    else:
+        st.warning("No frequent words found.")
     
     # Model performance
+    st.subheader("Model Performance")
     if model_results:
-        st.subheader("Model Performance")
         model_df = pd.DataFrame.from_dict(model_results, orient='index', columns=['Accuracy'])
         st.dataframe(model_df.sort_values('Accuracy', ascending=False))
-        
-        # Sentiment prediction
-        st.subheader("Predict Sentiment of New Text")
-        if models:
-            selected_model = st.selectbox("Select Model", list(models.keys()))
-            user_input = st.text_area("Enter a sentence to analyze:")
-            
-            if user_input and st.button("Predict"):
-                # Preprocess input
-                cleaned_input = clean_text(user_input)
-                # Vectorize
-                input_vec = vectorizer.transform([cleaned_input])
-                # Predict
-                model = models[selected_model]
-                prediction = model.predict(input_vec)[0]
-                
-                # Display result
-                if prediction == 'positive':
-                    st.success(f"Predicted Sentiment: {prediction.capitalize()}")
-                else:
-                    st.error(f"Predicted Sentiment: {prediction.capitalize()}")
-        else:
-            st.warning("No models available for prediction.")
     else:
-        st.warning("Insufficient data for model training. Sentiment prediction is unavailable.")
+        st.warning("No model results to display.")
+    
+    # Sentiment prediction
+    st.subheader("Predict Sentiment of New Text")
+    if models and vectorizer:
+        selected_model = st.selectbox("Select Model", list(models.keys()))
+        user_input = st.text_area("Enter a sentence to analyze:")
+        
+        if user_input and st.button("Predict"):
+            # Preprocess input
+            cleaned_input = clean_text(user_input)
+            # Vectorize
+            input_vec = vectorizer.transform([cleaned_input])
+            # Predict
+            model = models[selected_model]
+            prediction = model.predict(input_vec)[0]
+            
+            # Display result
+            if prediction == 'positive':
+                st.success(f"Predicted Sentiment: {prediction.capitalize()} ")
+            else:
+                st.error(f"Predicted Sentiment: {prediction.capitalize()} ")
+    else:
+        st.warning("Model prediction not available due to previous errors.")
 
 if __name__ == "__main__":
     main()
