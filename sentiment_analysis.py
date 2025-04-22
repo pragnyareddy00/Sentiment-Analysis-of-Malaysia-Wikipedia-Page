@@ -1,15 +1,14 @@
 import nltk
+import os
 
-# Ensure NLTK resources are downloaded BEFORE any Streamlit caching
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt')
+# Download necessary NLTK data files if not already present
+nltk_data_path = os.path.join(os.getcwd(), 'nltk_data')
+nltk.download('punkt', download_dir=nltk_data_path)
+nltk.download('stopwords', download_dir=nltk_data_path)
 
-try:
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    nltk.download('stopwords')
+# Let NLTK know where to find the data
+nltk.data.path.append(nltk_data_path)
+
 
 import streamlit as st
 import pandas as pd
